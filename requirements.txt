@@ -2,3 +2,5 @@ pandas
 numpy
 pyecharts
 streamlit_echarts
+streamlit
+openpyxl
