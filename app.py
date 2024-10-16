@@ -83,60 +83,66 @@ def create_sankey(df, batch_number, store, month, sku, brand, subbrand, doc_type
 st.set_page_config(layout="wide")  # 设置画幅变宽
 st.title("Sankey 图 - 追溯码分析")
 
-# 假设我们已经有了数据表 df
-df = pd.read_excel('./阿里溯源码清洗demo1 的副本.xlsx')  # 替换为你的数据文件路径
+# 上传文件单元框
+uploaded_file = st.file_uploader("上传一个文件", type=["xlsx", "csv"])
 
-# 获取唯一值，添加“全选”，排序
-def get_unique_sorted_values(column):
-    unique_values = df[column].fillna('缺失值').unique().tolist()
-    return ['全选'] + sorted(unique_values)
+if uploaded_file is not None:
+    if uploaded_file.name.endswith('.xlsx'):
+        df = pd.read_excel(uploaded_file)
+    elif uploaded_file.name.endswith('.csv'):
+        df = pd.read_csv(uploaded_file)
 
-# 初始化筛选条件的选项
-batch_numbers = get_unique_sorted_values('批次号')
-stores = get_unique_sorted_values('店铺')
-months = get_unique_sorted_values('月份')
-skus = get_unique_sorted_values('sku')
-brands = get_unique_sorted_values('brand')
-subbrands = get_unique_sorted_values('subbrand')
-doc_types = get_unique_sorted_values('单据类型')
+    # 获取唯一值，添加“全选”，排序
+    def get_unique_sorted_values(column):
+        unique_values = df[column].fillna('缺失值').unique().tolist()
+        return ['全选'] + sorted(unique_values)
 
-# 创建下拉筛选器和阈值输入框，每行三个
-col1, col2, col3 = st.columns(3)
-with col1:
-    batch_number = st.selectbox('批次号', batch_numbers)
-with col2:
-    store = st.selectbox('店铺', stores)
-with col3:
-    month = st.selectbox('月份', months)
+    # 初始化筛选条件的选项
+    batch_numbers = get_unique_sorted_values('批次号')
+    stores = get_unique_sorted_values('店铺')
+    months = get_unique_sorted_values('月份')
+    skus = get_unique_sorted_values('sku')
+    brands = get_unique_sorted_values('brand')
+    subbrands = get_unique_sorted_values('subbrand')
+    doc_types = get_unique_sorted_values('单据类型')
 
-col4, col5, col6 = st.columns(3)
-with col4:
-    sku = st.selectbox('SKU', skus)
-with col5:
-    brand = st.selectbox('品牌', brands)
-with col6:
-    subbrand = st.selectbox('子品牌', subbrands)
+    # 创建下拉筛选器和阈值输入框，每行三个
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        batch_number = st.selectbox('批次号', batch_numbers)
+    with col2:
+        store = st.selectbox('店铺', stores)
+    with col3:
+        month = st.selectbox('月份', months)
 
-col7, col8, col9 = st.columns(3)
-with col7:
-    doc_type = st.selectbox('单据类型', doc_types)
-with col8:
-    threshold = st.number_input('数量阈值:', min_value=0, value=0)
-with col9:
-    percent_threshold = st.number_input('百分比阈值:', min_value=0.0, max_value=1.0, value=0.0)
+    col4, col5, col6 = st.columns(3)
+    with col4:
+        sku = st.selectbox('SKU', skus)
+    with col5:
+        brand = st.selectbox('品牌', brands)
+    with col6:
+        subbrand = st.selectbox('子品牌', subbrands)
 
-# 更新 Sankey 图
-if st.button('更新图表'):
-    c, flow_data, total_codes, filtered_df = create_sankey(df, batch_number, store, month, sku, brand, subbrand, doc_type, threshold, percent_threshold)
-    
-    # 实时显示非重复码的数量
-    st.markdown(f"### 此批次号下的码的计数(非重复): {total_codes}")
-    
-    # 渲染 Sankey 图
-    st_pyecharts(c)
+    col7, col8, col9 = st.columns(3)
+    with col7:
+        doc_type = st.selectbox('单据类型', doc_types)
+    with col8:
+        threshold = st.number_input('数量阈值:', min_value=0, value=0)
+    with col9:
+        percent_threshold = st.number_input('百分比阈值:', min_value=0.0, max_value=1.0, value=0.0)
 
-    # 只展示筛选后的路径信息
-    filtered_paths = flow_data[flow_data['码'].isin(filtered_df['码'])]  # 只提取筛选后的码对应的路径信息
-    st.markdown("### 路径信息")
-    for _, row in filtered_paths.iterrows():
-        st.markdown(f"码: {row['码']} - 路径: {row['路径']}")
+    # 更新 Sankey 图
+    if st.button('更新图表'):
+        c, flow_data, total_codes, filtered_df = create_sankey(df, batch_number, store, month, sku, brand, subbrand, doc_type, threshold, percent_threshold)
+        
+        # 实时显示非重复码的数量
+        st.markdown(f"### 此批次号下的码的计数(非重复): {total_codes}")
+        
+        # 渲染 Sankey 图
+        st_pyecharts(c)
+
+        # 只展示筛选后的路径信息
+        filtered_paths = flow_data[flow_data['码'].isin(filtered_df['码'])]  # 只提取筛选后的码对应的路径信息
+        st.markdown("### 路径信息")
+        for _, row in filtered_paths.iterrows():
+            st.markdown(f"码: {row['码']} - 路径: {row['路径']}")
